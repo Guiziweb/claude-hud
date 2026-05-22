@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Guiziweb/guiziweb-plugins/compare/claude-hud-v0.2.1...claude-hud-v0.2.2) (2026-05-22)
+
+
+### Bug Fixes
+
+* **claude-hud:** align context % with Claude Code's warning ([53db0ff](https://github.com/Guiziweb/guiziweb-plugins/commit/53db0ffe4f10af8c1db9179f81150babe1615a59))
+
 ## [0.2.1](https://github.com/Guiziweb/guiziweb-plugins/compare/claude-hud-v0.2.0...claude-hud-v0.2.1) (2026-05-22)
 
 
