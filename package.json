@@ -1,0 +1,30 @@
+{
+	"name": "@guiziweb/claude-hud-plugin",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Minimal statusline HUD plugin for Claude Code",
+	"type": "module",
+	"license": "MIT",
+	"author": "guiziweb",
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"build": "tsdown",
+		"test": "bun test",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome lint .",
+		"format": "biome format --write .",
+		"check": "biome check .",
+		"ci": "bun run check && bun run typecheck && bun test --coverage && bun run build"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.15",
+		"@types/bun": "^1.3.14",
+		"tsdown": "^0.22.0",
+		"typescript": "^6.0.3"
+	},
+	"dependencies": {
+		"valibot": "^1.3.1"
+	}
+}

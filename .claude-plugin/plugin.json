@@ -1,0 +1,9 @@
+{
+	"name": "claude-hud",
+	"description": "Minimal statusline HUD showing the current context usage percentage",
+	"version": "0.1.0",
+	"author": {
+		"name": "Guiziweb",
+		"email": "guiziweb@gmail.com"
+	}
+}

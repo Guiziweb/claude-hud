@@ -1,0 +1,12 @@
+[test]
+# Coverage thresholds enforced when `bun test --coverage` runs (CI).
+coverageThreshold = 1.0
+
+# Test files themselves shouldn't count against coverage.
+coverageSkipTestFiles = true
+
+# Entry-point scripts are pure IO glue; their logic lives in covered modules.
+coveragePathIgnorePatterns = [
+  "src/hud.ts",
+  "src/install-statusline.ts",
+]
