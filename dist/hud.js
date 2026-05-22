@@ -1,4 +1,45 @@
 #!/usr/bin/env node
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+//#region src/autocompact-state.ts
+function isEnvTruthy(value) {
+	if (!value) return false;
+	return [
+		"1",
+		"true",
+		"yes",
+		"on"
+	].includes(value.toLowerCase().trim());
+}
+function resolveConfigPath() {
+	const dir = process.env.CLAUDE_CONFIG_DIR || os.homedir();
+	const legacy = path.join(dir, ".config.json");
+	if (fs.existsSync(legacy)) return legacy;
+	return path.join(dir, ".claude.json");
+}
+function readAutoCompactFlag() {
+	try {
+		const raw = fs.readFileSync(resolveConfigPath(), "utf8");
+		const parsed = JSON.parse(raw);
+		if (typeof parsed !== "object" || parsed === null) return void 0;
+		const value = parsed.autoCompactEnabled;
+		return typeof value === "boolean" ? value : void 0;
+	} catch {
+		return;
+	}
+}
+function isAutoCompactEnabled() {
+	if (isEnvTruthy(process.env.DISABLE_COMPACT)) return false;
+	if (isEnvTruthy(process.env.DISABLE_AUTO_COMPACT)) return false;
+	return readAutoCompactFlag() !== false;
+}
+const SUMMARY_RESERVED_TOKENS = 2e4;
+const AUTOCOMPACT_BUFFER_TOKENS = 13e3;
+function compactBufferTokens(autoCompactEnabled) {
+	return SUMMARY_RESERVED_TOKENS + (autoCompactEnabled ? AUTOCOMPACT_BUFFER_TOKENS : 0);
+}
+//#endregion
 //#region src/colors.ts
 /**
 * ANSI color helpers for the HUD.
@@ -32,40 +73,21 @@ function colorLimit(pct) {
 }
 //#endregion
 //#region src/compute.ts
-/** Clamp a number into `[0, 100]` and round to the nearest integer. */
 function clampPercent(pct) {
 	return Math.min(100, Math.max(0, Math.round(pct)));
 }
-/**
-* Returns the context-window fill percentage for the current tick.
-*
-* Strategy mirrors Claude Code's own behaviour:
-*
-* 1. Prefer `used_percentage` (v2.1.6+) when it is a strictly positive number.
-*    It is what `/context` shows, so the HUD stays consistent with the CLI.
-* 2. Otherwise fall back to manually summing `current_usage` token counts.
-*    Claude Code emits `used_percentage: 0` at session start before the first
-*    API call even though the system prompt, tools and CLAUDE.md already
-*    consume tokens — without this fallback the bar would lie at 0%.
-* 3. If we have neither a usable native value nor a positive window size,
-*    return 0.
-*/
-function computeContextPercent(cw) {
+function computeContextPercent(cw, autoCompactEnabled) {
 	if (!cw) return 0;
-	if (typeof cw.used_percentage === "number" && cw.used_percentage > 0) return cw.used_percentage;
 	const size = cw.context_window_size;
 	if (!size || size <= 0) return 0;
+	const threshold = size - compactBufferTokens(autoCompactEnabled);
+	if (threshold <= 0) return 0;
 	const u = cw.current_usage ?? {};
-	return ((u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0)) / size * 100;
+	return ((u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.output_tokens ?? 0)) / threshold * 100;
 }
 const MS_PER_MINUTE = 6e4;
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
-/**
-* Formats a rate-limit reset timestamp as a short human-readable duration
-* ("12m", "3h", "5d 4h"). Returns `null` if the timestamp is missing or in
-* the past — callers use `null` to mean "don't show a suffix".
-*/
 function formatResetIn(resetsAt, now) {
 	if (typeof resetsAt !== "number" || !Number.isFinite(resetsAt)) return null;
 	const ms = resetsAt * 1e3 - now;
@@ -86,7 +108,6 @@ const BAR_FILLED = "▰";
 const BAR_EMPTY = "▱";
 const SEP_PRIMARY = `  ${DIM}│${RESET}  `;
 const SEP_SECONDARY = `  ${DIM}·${RESET}  `;
-/** Render a single coloured bar with its percentage and optional reset suffix. */
 function renderBar(label, pct, color, resetSuffix) {
 	const filled = Math.round(pct / 100 * BAR_WIDTH);
 	return `${label} ${color}${BAR_FILLED.repeat(filled) + BAR_EMPTY.repeat(BAR_WIDTH - filled)}${RESET} ${pct}%${resetSuffix ? ` ${DIM}${resetSuffix}${RESET}` : ""}`;
@@ -99,20 +120,8 @@ function renderLimit(label, slot, now) {
 	const resetIn = formatResetIn(slot.resets_at, now);
 	return renderBar(label, clamped, colorLimit(clamped), resetIn ? `(${resetIn})` : null);
 }
-/**
-* Assemble the full statusline string for the current tick.
-*
-* Layout: `Context <bar> N% │ 5h <bar> N% (Xh) · 7d <bar> N% (Xd)`
-*
-* Each limit bar is rendered only when Claude Code has populated the
-* corresponding `rate_limits` slot — slots with missing data are silently
-* omitted rather than shown as placeholder bars, because permanent empty
-* bars would just be visual noise. At session start the limit bars appear
-* progressively as data lands; API-only users without subscriber limits
-* never see them.
-*/
-function renderStatusLine(payload, now) {
-	const ctxPct = clampPercent(computeContextPercent(payload.context_window));
+function renderStatusLine(payload, now, autoCompactEnabled) {
+	const ctxPct = clampPercent(computeContextPercent(payload.context_window, autoCompactEnabled));
 	const contextBar = renderBar("Context", ctxPct, colorContext(ctxPct), null);
 	const limits = [renderLimit("5h", payload.rate_limits?.five_hour, now), renderLimit("7d", payload.rate_limits?.seven_day, now)].filter((entry) => entry !== null);
 	if (limits.length === 0) return contextBar;
@@ -500,7 +509,7 @@ function readStdin() {
 async function main() {
 	const payload = parseStdin(await readStdin());
 	if (!payload) return;
-	process.stdout.write(`${renderStatusLine(payload, Date.now())}\n`);
+	process.stdout.write(`${renderStatusLine(payload, Date.now(), isAutoCompactEnabled())}\n`);
 }
 main();
 //#endregion

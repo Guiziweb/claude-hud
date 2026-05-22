@@ -45,13 +45,28 @@ describe('renderBar()', () => {
 
 describe('renderStatusLine()', () => {
 	test('renders context only when no rate_limits are present', () => {
-		const out = stripAnsi(renderStatusLine({ context_window: { used_percentage: 42 } }, NOW));
+		const out = stripAnsi(
+			renderStatusLine(
+				{
+					context_window: { context_window_size: 200_000, current_usage: { input_tokens: 70_140 } },
+				},
+				NOW,
+				true
+			)
+		);
 		expect(out).toBe('Context ▰▰▰▰▰▱▱▱▱▱▱▱ 42%');
 	});
 
 	test('renders context only when rate_limits is null', () => {
 		const out = stripAnsi(
-			renderStatusLine({ context_window: { used_percentage: 42 }, rate_limits: null }, NOW)
+			renderStatusLine(
+				{
+					context_window: { context_window_size: 200_000, current_usage: { input_tokens: 70_140 } },
+					rate_limits: null,
+				},
+				NOW,
+				true
+			)
 		);
 		expect(out).toBe('Context ▰▰▰▰▰▱▱▱▱▱▱▱ 42%');
 	});
@@ -60,10 +75,11 @@ describe('renderStatusLine()', () => {
 		const out = stripAnsi(
 			renderStatusLine(
 				{
-					context_window: { used_percentage: 42 },
+					context_window: { context_window_size: 200_000, current_usage: { input_tokens: 70_140 } },
 					rate_limits: { five_hour: { used_percentage: 30, resets_at: RESET_IN_3H } },
 				},
-				NOW
+				NOW,
+				true
 			)
 		);
 		expect(out).toBe('Context ▰▰▰▰▰▱▱▱▱▱▱▱ 42%  │  5h ▰▰▰▰▱▱▱▱▱▱▱▱ 30% (3h 12m)');
@@ -73,13 +89,14 @@ describe('renderStatusLine()', () => {
 		const out = stripAnsi(
 			renderStatusLine(
 				{
-					context_window: { used_percentage: 42 },
+					context_window: { context_window_size: 200_000, current_usage: { input_tokens: 70_140 } },
 					rate_limits: {
 						five_hour: { used_percentage: 30, resets_at: RESET_IN_3H },
 						seven_day: { used_percentage: 12, resets_at: RESET_IN_5D },
 					},
 				},
-				NOW
+				NOW,
+				true
 			)
 		);
 		expect(out).toBe(
@@ -91,13 +108,14 @@ describe('renderStatusLine()', () => {
 		const out = stripAnsi(
 			renderStatusLine(
 				{
-					context_window: { used_percentage: 42 },
+					context_window: { context_window_size: 200_000, current_usage: { input_tokens: 70_140 } },
 					rate_limits: {
 						five_hour: { resets_at: RESET_IN_3H },
 						seven_day: { used_percentage: 12, resets_at: RESET_IN_5D },
 					},
 				},
-				NOW
+				NOW,
+				true
 			)
 		);
 		expect(out).toBe('Context ▰▰▰▰▰▱▱▱▱▱▱▱ 42%  │  7d ▰▱▱▱▱▱▱▱▱▱▱▱ 12% (5d 3h)');
@@ -107,12 +125,13 @@ describe('renderStatusLine()', () => {
 		const out = stripAnsi(
 			renderStatusLine(
 				{
-					context_window: { used_percentage: 42 },
+					context_window: { context_window_size: 200_000, current_usage: { input_tokens: 70_140 } },
 					rate_limits: {
 						five_hour: { used_percentage: 30, resets_at: NOW / 1000 - 60 },
 					},
 				},
-				NOW
+				NOW,
+				true
 			)
 		);
 		expect(out).toBe('Context ▰▰▰▰▰▱▱▱▱▱▱▱ 42%  │  5h ▰▰▰▰▱▱▱▱▱▱▱▱ 30%');
@@ -122,13 +141,14 @@ describe('renderStatusLine()', () => {
 		const out = stripAnsi(
 			renderStatusLine(
 				{
-					context_window: { used_percentage: 42 },
+					context_window: { context_window_size: 200_000, current_usage: { input_tokens: 70_140 } },
 					rate_limits: {
 						five_hour: null,
 						seven_day: { used_percentage: 12, resets_at: RESET_IN_5D },
 					},
 				},
-				NOW
+				NOW,
+				true
 			)
 		);
 		expect(out).toBe('Context ▰▰▰▰▰▱▱▱▱▱▱▱ 42%  │  7d ▰▱▱▱▱▱▱▱▱▱▱▱ 12% (5d 3h)');

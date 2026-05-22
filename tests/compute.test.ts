@@ -24,61 +24,122 @@ describe('clampPercent()', () => {
 
 describe('computeContextPercent()', () => {
 	test('returns 0 when context_window is missing', () => {
-		expect(computeContextPercent(undefined)).toBe(0);
+		expect(computeContextPercent(undefined, true)).toBe(0);
 	});
 
-	test('prefers a strictly positive native used_percentage', () => {
-		expect(computeContextPercent({ used_percentage: 42 })).toBe(42);
-	});
-
-	test('falls back to manual calculation when native is 0', () => {
-		// Claude Code emits used_percentage:0 at session start while current_usage
-		// already contains the initial-context tokens (system prompt, tools, …).
-		// The fallback recovers a truthful percentage in that window.
-		const pct = computeContextPercent({
-			used_percentage: 0,
-			context_window_size: 200_000,
-			current_usage: {
-				input_tokens: 4_000,
-				cache_read_input_tokens: 4_000,
-				cache_creation_input_tokens: 2_000,
+	test('sums four buckets over (window − summary − autocompact) with autocompact ON', () => {
+		// Threshold = 200_000 − 20_000 − 13_000 = 167_000.
+		// 4_000 + 2_000 + 4_000 + 6_700 = 16_700 → 10 % of threshold.
+		const pct = computeContextPercent(
+			{
+				context_window_size: 200_000,
+				current_usage: {
+					input_tokens: 4_000,
+					cache_creation_input_tokens: 2_000,
+					cache_read_input_tokens: 4_000,
+					output_tokens: 6_700,
+				},
 			},
-		});
-		expect(pct).toBe(5);
+			true
+		);
+		expect(pct).toBe(10);
 	});
 
-	test('falls back to manual calculation when native is null', () => {
-		const pct = computeContextPercent({
-			used_percentage: null,
-			context_window_size: 100,
-			current_usage: { input_tokens: 25 },
-		});
-		expect(pct).toBe(25);
+	test('drops the autocompact buffer but keeps the summary reservation when OFF', () => {
+		// Threshold = 200_000 − 20_000 = 180_000. 18_000 / 180_000 = 10 %.
+		const pct = computeContextPercent(
+			{
+				context_window_size: 200_000,
+				current_usage: { input_tokens: 18_000 },
+			},
+			false
+		);
+		expect(pct).toBe(10);
 	});
 
-	test('returns 0 when native is 0 and window size is missing', () => {
-		expect(computeContextPercent({ used_percentage: 0 })).toBe(0);
+	test('reaches 100 % exactly at the autocompact threshold', () => {
+		// 167 000 of 200 000 → 100 % from the warning's perspective.
+		const pct = computeContextPercent(
+			{
+				context_window_size: 200_000,
+				current_usage: { input_tokens: 167_000 },
+			},
+			true
+		);
+		expect(pct).toBe(100);
 	});
 
-	test('returns 0 when native is 0 and window size is non-positive', () => {
-		expect(computeContextPercent({ used_percentage: 0, context_window_size: 0 })).toBe(0);
+	test('ignores stdin.used_percentage even when present', () => {
+		const pct = computeContextPercent(
+			{
+				used_percentage: 42,
+				context_window_size: 200_000,
+				current_usage: { input_tokens: 100_000, output_tokens: 67_000 },
+			},
+			true
+		);
+		expect(pct).toBe(100);
 	});
 
-	test('treats missing current_usage entries as zero', () => {
+	test('returns 0 when the window size is missing or non-positive', () => {
+		expect(computeContextPercent({}, true)).toBe(0);
+		expect(computeContextPercent({ context_window_size: 0 }, true)).toBe(0);
 		expect(
-			computeContextPercent({
-				used_percentage: 0,
-				context_window_size: 100,
-				current_usage: null,
-			})
+			computeContextPercent(
+				{
+					context_window_size: -10,
+					current_usage: { input_tokens: 5 },
+				},
+				true
+			)
+		).toBe(0);
+	});
+
+	test('returns 0 when the window is smaller than the buffer', () => {
+		// Pathological case: a 1 000-token window with autocompact ON would yield
+		// a negative threshold; we refuse to render rather than divide by it.
+		expect(
+			computeContextPercent(
+				{
+					context_window_size: 1_000,
+					current_usage: { input_tokens: 500 },
+				},
+				true
+			)
+		).toBe(0);
+	});
+
+	test('treats missing or empty current_usage as zero usage', () => {
+		expect(
+			computeContextPercent(
+				{
+					context_window_size: 200_000,
+					current_usage: null,
+				},
+				true
+			)
 		).toBe(0);
 		expect(
-			computeContextPercent({
-				used_percentage: 0,
-				context_window_size: 100,
-				current_usage: {},
-			})
+			computeContextPercent(
+				{
+					context_window_size: 200_000,
+					current_usage: {},
+				},
+				true
+			)
 		).toBe(0);
+	});
+
+	test('treats individual missing token fields as zero', () => {
+		// Threshold = 167 000. Only input_tokens → others default to 0.
+		const pct = computeContextPercent(
+			{
+				context_window_size: 200_000,
+				current_usage: { input_tokens: 16_700 },
+			},
+			true
+		);
+		expect(pct).toBe(10);
 	});
 });
 

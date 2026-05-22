@@ -8,7 +8,6 @@ const BAR_EMPTY = '▱';
 const SEP_PRIMARY = `  ${DIM}│${RESET}  `;
 const SEP_SECONDARY = `  ${DIM}·${RESET}  `;
 
-/** Render a single coloured bar with its percentage and optional reset suffix. */
 export function renderBar(
 	label: string,
 	pct: number,
@@ -34,20 +33,12 @@ function renderLimit(
 	return renderBar(label, clamped, colorLimit(clamped), resetIn ? `(${resetIn})` : null);
 }
 
-/**
- * Assemble the full statusline string for the current tick.
- *
- * Layout: `Context <bar> N% │ 5h <bar> N% (Xh) · 7d <bar> N% (Xd)`
- *
- * Each limit bar is rendered only when Claude Code has populated the
- * corresponding `rate_limits` slot — slots with missing data are silently
- * omitted rather than shown as placeholder bars, because permanent empty
- * bars would just be visual noise. At session start the limit bars appear
- * progressively as data lands; API-only users without subscriber limits
- * never see them.
- */
-export function renderStatusLine(payload: StdinPayload, now: number): string {
-	const ctxPct = clampPercent(computeContextPercent(payload.context_window));
+export function renderStatusLine(
+	payload: StdinPayload,
+	now: number,
+	autoCompactEnabled: boolean
+): string {
+	const ctxPct = clampPercent(computeContextPercent(payload.context_window, autoCompactEnabled));
 	const contextBar = renderBar('Context', ctxPct, colorContext(ctxPct), null);
 
 	const fiveHour = renderLimit('5h', payload.rate_limits?.five_hour, now);
