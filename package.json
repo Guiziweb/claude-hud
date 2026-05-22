@@ -1,7 +1,7 @@
 {
 	"name": "@guiziweb/claude-hud-plugin",
 	"private": true,
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Minimal statusline HUD plugin for Claude Code",
 	"type": "module",
 	"license": "MIT",
