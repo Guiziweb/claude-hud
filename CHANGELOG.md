@@ -2,6 +2,13 @@
 
 Releases up to 0.2.2 were made from the [`guiziweb-plugins`](https://github.com/Guiziweb/guiziweb-plugins) monorepo (`plugins/claude-hud/`); their links point there.
 
+## [0.2.3](https://github.com/Guiziweb/claude-hud/compare/v0.2.2...v0.2.3) (2026-07-31)
+
+
+### Bug Fixes
+
+* align context % with the official used_percentage ([3964306](https://github.com/Guiziweb/claude-hud/commit/396430616331c194523df9b75ffb28a4ca6d01e0))
+
 ## [0.2.2](https://github.com/Guiziweb/guiziweb-plugins/compare/claude-hud-v0.2.1...claude-hud-v0.2.2) (2026-05-22)
 
 
