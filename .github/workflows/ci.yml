@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint & format check
+        run: bun run check
+
+      - name: Type check
+        run: bun run typecheck
+
+      - name: Tests with coverage (100% threshold)
+        run: bun test --coverage
+
+      - name: Build
+        run: bun run build
+
+      - name: Verify committed dist/ is up to date
+        run: |
+          if ! git diff --exit-code -- dist/; then
+            echo "::error::dist/ is out of sync with src/. Run 'bun run build' and commit the result."
+            exit 1
+          fi

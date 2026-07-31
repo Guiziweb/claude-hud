@@ -1,8 +1,8 @@
 # claude-hud
 
-[![CI](https://github.com/Guiziweb/guiziweb-plugins/actions/workflows/claude-hud-ci.yml/badge.svg)](https://github.com/Guiziweb/guiziweb-plugins/actions/workflows/claude-hud-ci.yml)
+[![CI](https://github.com/Guiziweb/claude-hud/actions/workflows/ci.yml/badge.svg)](https://github.com/Guiziweb/claude-hud/actions/workflows/ci.yml)
 [![coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](#)
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](../../LICENSE)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 > Minimal statusline HUD for Claude Code - shows context usage and rate-limit
 > consumption on a single line, with colour escalation when something needs
@@ -60,8 +60,10 @@ Never overrides a third-party statusLine.
 ## Project layout
 
 ```
-plugins/claude-hud/
-├── .claude-plugin/plugin.json
+claude-hud/
+├── .claude-plugin/
+│   ├── plugin.json
+│   └── marketplace.json          # single-plugin marketplace (source "./")
 ├── hooks/hooks.json              # SessionStart → install-statusline
 ├── src/
 │   ├── colors.ts                 # ANSI helpers + threshold constants
@@ -69,25 +71,34 @@ plugins/claude-hud/
 │   ├── compute.ts                # context %, clamp, reset-time formatter
 │   ├── render.ts                 # bar + assembled status line
 │   ├── install.ts                # pure decideInstall() logic
+│   ├── autocompact-state.ts      # auto-compact flag + token buffers
 │   ├── hud.ts                    # entry: stdin → render → stdout
 │   └── install-statusline.ts     # entry: env + fs → decideInstall → fs
 ├── tests/                        # bun test, 100% line coverage
 ├── dist/                         # built JS (committed; consumers run as-is)
+├── scripts/build.mjs             # tsdown build driver
 ├── package.json
 ├── tsconfig.json
-├── tsdown.config.ts
 ├── biome.json
 └── bunfig.toml
 ```
 
-## Local development
+## Installation
 
-This plugin lives inside the [`guiziweb-plugins`](../../README.md) marketplace
-repo. To test the plugin without installing it through the marketplace, point
-Claude Code at the plugin directory directly:
+The repo is its own single-plugin marketplace:
 
 ```bash
-claude --plugin-dir /path/to/guiziweb-plugins/plugins/claude-hud/
+claude plugin marketplace add Guiziweb/claude-hud
+claude plugin install claude-hud@claude-hud
+```
+
+## Local development
+
+To test the plugin without installing it through the marketplace, point
+Claude Code at the repo directory directly:
+
+```bash
+claude --plugin-dir /path/to/claude-hud/
 ```
 
 The first launch runs the `SessionStart` hook, which writes the statusLine

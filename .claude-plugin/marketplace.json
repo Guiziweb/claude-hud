@@ -1,0 +1,27 @@
+{
+	"name": "claude-hud",
+	"owner": {
+		"name": "Guiziweb",
+		"email": "guiziweb@gmail.com"
+	},
+	"metadata": {
+		"description": "Minimal statusline HUD plugin for Claude Code",
+		"pluginRoot": "."
+	},
+	"plugins": [
+		{
+			"name": "claude-hud",
+			"source": "./",
+			"description": "Minimal statusline HUD showing context usage and rate-limit consumption",
+			"author": {
+				"name": "Guiziweb",
+				"email": "guiziweb@gmail.com"
+			},
+			"homepage": "https://github.com/Guiziweb/claude-hud",
+			"repository": "https://github.com/Guiziweb/claude-hud",
+			"license": "MIT",
+			"keywords": ["statusline", "hud", "context"],
+			"category": "productivity"
+		}
+	]
+}

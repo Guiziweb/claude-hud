@@ -6,6 +6,10 @@
 	"type": "module",
 	"license": "MIT",
 	"author": "guiziweb",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Guiziweb/claude-hud.git"
+	},
 	"engines": {
 		"node": ">=20"
 	},
