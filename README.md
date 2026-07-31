@@ -20,6 +20,9 @@ Context ▰▰▰▰▰▱▱▱▱▱▱▱ 42%  │  5h ▰▰▰▰▱▱▱�
 
 ## Installation
 
+Requires **Node.js 20+** on your `PATH` - both the statusline and the install
+hook run `node`.
+
 The repo is its own single-plugin marketplace:
 
 ```bash
