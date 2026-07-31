@@ -35,7 +35,6 @@ Core modules (tested, 100% covered):
 | `render.ts` | bars + line assembly |
 | `colors.ts` | ANSI helpers + colour thresholds |
 | `install.ts` | `decideInstall()`: install / update / skip-already-current / skip-existing-third-party |
-| `autocompact-state.ts` | reads Claude Code config: auto-compact flag + token buffers |
 
 Entry points (I/O glue, excluded from coverage):
 

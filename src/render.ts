@@ -33,12 +33,8 @@ function renderLimit(
 	return renderBar(label, clamped, colorLimit(clamped), resetIn ? `(${resetIn})` : null);
 }
 
-export function renderStatusLine(
-	payload: StdinPayload,
-	now: number,
-	autoCompactEnabled: boolean
-): string {
-	const ctxPct = clampPercent(computeContextPercent(payload.context_window, autoCompactEnabled));
+export function renderStatusLine(payload: StdinPayload, now: number): string {
+	const ctxPct = clampPercent(computeContextPercent(payload.context_window));
 	const contextBar = renderBar('Context', ctxPct, colorContext(ctxPct), null);
 
 	const fiveHour = renderLimit('5h', payload.rate_limits?.five_hour, now);

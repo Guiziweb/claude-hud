@@ -1,34 +1,27 @@
-import { compactBufferTokens } from './autocompact-state.ts';
 import type { ContextWindow } from './stdin-schema.ts';
 
 export function clampPercent(pct: number): number {
 	return Math.min(100, Math.max(0, Math.round(pct)));
 }
 
-// Mirrors CC's "Context low N% remaining" warning: four token buckets over the
-// effective threshold (`window − autocompact buffer`). Stdin's used_percentage
-// omits output_tokens and uses the raw window, drifting by 1-6 % from the
-// warning the user actually sees.
-export function computeContextPercent(
-	cw: ContextWindow | undefined,
-	autoCompactEnabled: boolean
-): number {
+// Official formula (see docs/statusline): used_percentage is
+// (input + cache_creation + cache_read) / context_window_size, output
+// tokens excluded. Prefer the pre-calculated field so the HUD always
+// matches `/context`; recompute the same formula when it is null/absent
+// (early session).
+export function computeContextPercent(cw: ContextWindow | undefined): number {
 	if (!cw) return 0;
+
+	if (typeof cw.used_percentage === 'number') return cw.used_percentage;
 
 	const size = cw.context_window_size;
 	if (!size || size <= 0) return 0;
 
-	const threshold = size - compactBufferTokens(autoCompactEnabled);
-	if (threshold <= 0) return 0;
-
 	const u = cw.current_usage ?? {};
 	const total =
-		(u.input_tokens ?? 0) +
-		(u.cache_creation_input_tokens ?? 0) +
-		(u.cache_read_input_tokens ?? 0) +
-		(u.output_tokens ?? 0);
+		(u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
 
-	return (total / threshold) * 100;
+	return (total / size) * 100;
 }
 
 const MS_PER_MINUTE = 60_000;

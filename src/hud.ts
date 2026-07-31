@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { isAutoCompactEnabled } from './autocompact-state.ts';
 import { renderStatusLine } from './render.ts';
 import { parseStdin } from './stdin-schema.ts';
 
@@ -24,7 +23,7 @@ async function main(): Promise<void> {
 		// Claude Code is fine with an empty statusLine output.
 		return;
 	}
-	process.stdout.write(`${renderStatusLine(payload, Date.now(), isAutoCompactEnabled())}\n`);
+	process.stdout.write(`${renderStatusLine(payload, Date.now())}\n`);
 }
 
 void main();

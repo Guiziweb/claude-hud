@@ -1,45 +1,4 @@
 #!/usr/bin/env node
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
-//#region src/autocompact-state.ts
-function isEnvTruthy(value) {
-	if (!value) return false;
-	return [
-		"1",
-		"true",
-		"yes",
-		"on"
-	].includes(value.toLowerCase().trim());
-}
-function resolveConfigPath() {
-	const dir = process.env.CLAUDE_CONFIG_DIR || os.homedir();
-	const legacy = path.join(dir, ".config.json");
-	if (fs.existsSync(legacy)) return legacy;
-	return path.join(dir, ".claude.json");
-}
-function readAutoCompactFlag() {
-	try {
-		const raw = fs.readFileSync(resolveConfigPath(), "utf8");
-		const parsed = JSON.parse(raw);
-		if (typeof parsed !== "object" || parsed === null) return void 0;
-		const value = parsed.autoCompactEnabled;
-		return typeof value === "boolean" ? value : void 0;
-	} catch {
-		return;
-	}
-}
-function isAutoCompactEnabled() {
-	if (isEnvTruthy(process.env.DISABLE_COMPACT)) return false;
-	if (isEnvTruthy(process.env.DISABLE_AUTO_COMPACT)) return false;
-	return readAutoCompactFlag() !== false;
-}
-const SUMMARY_RESERVED_TOKENS = 2e4;
-const AUTOCOMPACT_BUFFER_TOKENS = 13e3;
-function compactBufferTokens(autoCompactEnabled) {
-	return SUMMARY_RESERVED_TOKENS + (autoCompactEnabled ? AUTOCOMPACT_BUFFER_TOKENS : 0);
-}
-//#endregion
 //#region src/colors.ts
 /**
 * ANSI color helpers for the HUD.
@@ -76,14 +35,13 @@ function colorLimit(pct) {
 function clampPercent(pct) {
 	return Math.min(100, Math.max(0, Math.round(pct)));
 }
-function computeContextPercent(cw, autoCompactEnabled) {
+function computeContextPercent(cw) {
 	if (!cw) return 0;
+	if (typeof cw.used_percentage === "number") return cw.used_percentage;
 	const size = cw.context_window_size;
 	if (!size || size <= 0) return 0;
-	const threshold = size - compactBufferTokens(autoCompactEnabled);
-	if (threshold <= 0) return 0;
 	const u = cw.current_usage ?? {};
-	return ((u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.output_tokens ?? 0)) / threshold * 100;
+	return ((u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0)) / size * 100;
 }
 const MS_PER_MINUTE = 6e4;
 const MINUTES_PER_HOUR = 60;
@@ -120,8 +78,8 @@ function renderLimit(label, slot, now) {
 	const resetIn = formatResetIn(slot.resets_at, now);
 	return renderBar(label, clamped, colorLimit(clamped), resetIn ? `(${resetIn})` : null);
 }
-function renderStatusLine(payload, now, autoCompactEnabled) {
-	const ctxPct = clampPercent(computeContextPercent(payload.context_window, autoCompactEnabled));
+function renderStatusLine(payload, now) {
+	const ctxPct = clampPercent(computeContextPercent(payload.context_window));
 	const contextBar = renderBar("Context", ctxPct, colorContext(ctxPct), null);
 	const limits = [renderLimit("5h", payload.rate_limits?.five_hour, now), renderLimit("7d", payload.rate_limits?.seven_day, now)].filter((entry) => entry !== null);
 	if (limits.length === 0) return contextBar;
@@ -509,7 +467,7 @@ function readStdin() {
 async function main() {
 	const payload = parseStdin(await readStdin());
 	if (!payload) return;
-	process.stdout.write(`${renderStatusLine(payload, Date.now(), isAutoCompactEnabled())}\n`);
+	process.stdout.write(`${renderStatusLine(payload, Date.now())}\n`);
 }
 main();
 //#endregion

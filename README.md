@@ -71,7 +71,6 @@ claude-hud/
 │   ├── compute.ts                # context %, clamp, reset-time formatter
 │   ├── render.ts                 # bar + assembled status line
 │   ├── install.ts                # pure decideInstall() logic
-│   ├── autocompact-state.ts      # auto-compact flag + token buffers
 │   ├── hud.ts                    # entry: stdin → render → stdout
 │   └── install-statusline.ts     # entry: env + fs → decideInstall → fs
 ├── tests/                        # bun test, 100% line coverage
