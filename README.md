@@ -18,6 +18,15 @@ Context ▰▰▰▰▰▱▱▱▱▱▱▱ 42%  │  5h ▰▰▰▰▱▱▱�
 - The limits group is omitted entirely when `rate_limits` is absent from stdin
   (API-only users, older Claude Code versions).
 
+## Installation
+
+The repo is its own single-plugin marketplace:
+
+```bash
+claude plugin marketplace add Guiziweb/claude-hud
+claude plugin install claude-hud@claude-hud
+```
+
 ## How it works
 
 ### Runtime loop (statusline)
@@ -80,15 +89,6 @@ claude-hud/
 ├── tsconfig.json
 ├── biome.json
 └── bunfig.toml
-```
-
-## Installation
-
-The repo is its own single-plugin marketplace:
-
-```bash
-claude plugin marketplace add Guiziweb/claude-hud
-claude plugin install claude-hud@claude-hud
 ```
 
 ## Local development
